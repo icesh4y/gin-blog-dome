@@ -1,0 +1,12 @@
+server:
+  port: 9999  # 启动服务的端口
+
+datasource: # mysql配置信息
+  dirverName: mysql
+  host: 127.0.0.1
+  port: 3306
+  databases: ginessn
+  username: root
+  password: 123
+  charset: utf8mb4
+  local: Asia/Shanghai
