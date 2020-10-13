@@ -15,9 +15,13 @@ import (
 )
 
 func Register(c *gin.Context) {
-	name := c.PostForm("name")
-	pwd := c.PostForm("pwd")
-	phone := c.PostForm("phone")
+
+	var requesUser = models.User{}
+	c.Bind(&requesUser)
+	name := requesUser.Name
+	pwd := requesUser.Pwd
+	phone := requesUser.Phone
+
 	if len(phone) != 11 {
 		c.JSON(http.StatusForbidden, gin.H{"code": 422, "msg": "手机号必须是11位"})
 		return
@@ -44,9 +48,21 @@ func Register(c *gin.Context) {
 		//c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "密码加密错误"})
 		return
 	}
-	models.CreateNewUser(name, phone, string(hasePassword))
+	newUser := models.User{
+		Name:  name,
+		Phone: phone,
+		Pwd:   string(hasePassword),
+	}
 
-	response.Success(c, nil, "注册成功")
+	models.CreateNewUser(&newUser)
+	token, err := jwt.ReleaseToken(newUser)
+	if err != nil {
+		response.Response(c, http.StatusBadRequest, 400, nil, "异常")
+		//c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "异常"})
+		return
+	}
+
+	response.Success(c, gin.H{"token": token}, "注册成功")
 	//c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "注册成功"})
 	log.Println(name, pwd, phone)
 }

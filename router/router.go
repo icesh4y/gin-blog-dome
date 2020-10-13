@@ -8,6 +8,7 @@ import (
 
 func SetUpRouter() *gin.Engine {
 	r := gin.Default()
+	r.Use(middleware.CorsMiddleware(), middleware.RecoveryMiddleware())
 	auth := r.Group("v1/auth")
 	{
 		auth.POST("/register", controller.Register)
@@ -16,14 +17,24 @@ func SetUpRouter() *gin.Engine {
 
 	}
 
-	category := r.Group("v1/category")
-	categorycontroller := controller.NewCategoryController()
+	categoryRouter := r.Group("v1/category")
+	categoryRouter.Use(middleware.AuthMiddleware())
+	categoryController := controller.NewCategoryController()
 	{
-		category.GET("/:id", categorycontroller.Show)
-		category.POST("/post", categorycontroller.Create)
-		category.PUT("/:id", categorycontroller.Update)
-		category.DELETE("/:id", categorycontroller.Delete)
+		categoryRouter.GET("/:id",  categoryController.Show)
+		categoryRouter.POST("/post",categoryController.Create)
+		categoryRouter.PUT("/:id", categoryController.Update)
+		categoryRouter.DELETE("/:id", categoryController.Delete)
 	}
 
+	postsRouter := r.Group("/v1/posts")
+	postsRouter.Use(middleware.AuthMiddleware())
+	postController := controller.NewPostsRouterController()
+	{
+		postsRouter.GET("/:id",postController.Show)
+		postsRouter.POST("/post", postController.Create)
+		postsRouter.PUT("/:id", postController.Update)
+		postsRouter.DELETE("/:id", postController.Delete)
+	}
 	return r
 }

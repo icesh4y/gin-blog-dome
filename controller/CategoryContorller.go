@@ -1,12 +1,11 @@
 package controller
 
 import (
-	"essential/dao"
 	"essential/models"
+	"essential/repository"
 	"essential/response"
 	"essential/vo"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"strconv"
 )
 
@@ -15,13 +14,15 @@ type ICategorycontroller interface {
 }
 
 type CategoryController struct {
-	DB *gorm.DB
+	repository repository.CategoryRepository
 }
 
 func NewCategoryController() ICategorycontroller {
-	dao.DB.AutoMigrate(&models.Category{})
+	repository := repository.NewCategoryRepository()
 
-	return CategoryController{DB: dao.DB}
+	repository.DB.AutoMigrate(&models.Category{})
+
+	return CategoryController{repository: repository}
 }
 
 func (c2 CategoryController) Create(c *gin.Context) {
@@ -31,31 +32,32 @@ func (c2 CategoryController) Create(c *gin.Context) {
 		return
 	}
 
-	category := models.Category{Name: requestCategory.Name}
-	c2.DB.Create(&category)
-
-	response.Success(c, gin.H{"requestCategory": requestCategory}, "")
+	category, err := c2.repository.Create(requestCategory.Name)
+	if err !=nil{
+		panic(err)
+		return
+	}
+	response.Success(c, gin.H{"category": category}, "")
 }
 
 func (c2 CategoryController) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Params.ByName("id"))
 
-	if err := c2.DB.Delete(models.Category{}, id).Error; err != nil {
+	if err := c2.repository.DeleteById(id);err!=nil{
 		response.Fail(c, nil, "删除失败")
 		return
 	}
-
 	response.Success(c, nil, "")
 }
 
 func (c2 CategoryController) Show(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Params.ByName("id"))
-	var Category models.Category
-	if c2.DB.First(&Category, id).RecordNotFound() {
+	category, err := c2.repository.SelectById(id)
+	if err != nil{
 		response.Fail(c, nil, "分类不存在")
 		return
 	}
-	response.Success(c, gin.H{"Category": Category}, "")
+	response.Success(c, gin.H{"category": category}, "")
 }
 
 func (c2 CategoryController) Update(c *gin.Context) {
@@ -68,12 +70,16 @@ func (c2 CategoryController) Update(c *gin.Context) {
 
 	// 绑定 path 中的参数
 	id, _ := strconv.Atoi(c.Params.ByName("id"))
-	var updateCategory models.Category
-	if c2.DB.First(&updateCategory, id).RecordNotFound() {
+
+	updateCategory, err := c2.repository.SelectById(id)
+	if err !=nil{
 		response.Fail(c, nil, "分类不存在")
 		return
 	}
-
-	c2.DB.Model(&updateCategory).Update("name", requestCategory.Name)
-	response.Success(c, gin.H{"updateCategory": updateCategory}, "")
+	category, err := c2.repository.Update(*updateCategory, requestCategory.Name)
+	if err != nil{
+		response.Fail(c, nil, "分类不存在")
+		return
+	}
+	response.Success(c, gin.H{"category": category}, "修改成功")
 }

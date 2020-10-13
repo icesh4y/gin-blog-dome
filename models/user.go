@@ -23,12 +23,7 @@ func SelectUserPhone(phone string) bool {
 	}
 	return false
 }
-func CreateNewUser(name, phone, pwd string) {
-	newUser := User{
-		Name:  name,
-		Phone: phone,
-		Pwd:   pwd,
-	}
+func CreateNewUser(newUser *User) {
 	dao.DB.Debug().Create(&newUser)
 }
 
