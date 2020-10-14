@@ -8,10 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"log"
+	"strconv"
 )
 
 type IPostController interface {
 	RestController
+	PageList(c *gin.Context)
 }
 type PostController struct {
 	DB *gorm.DB
@@ -100,6 +102,20 @@ func (p PostController) Update(c *gin.Context) {
 		return
 	}
 	response.Success(c, gin.H{"requestPost": requestPost}, "更新成功")
+
+}
+
+func (p PostController) PageList(c *gin.Context) {
+	pageNum, _ := strconv.Atoi(c.DefaultQuery("pageNum", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+
+	var posts []models.Post
+	p.DB.Order("created_at desc").Offset((pageNum - 1) * pageSize).Limit(pageSize).Find(&posts)
+
+	var total int
+	p.DB.Model(&models.Post{}).Count(&total)
+
+	response.Success(c, gin.H{"posts": posts, "total": total}, "")
 
 }
 

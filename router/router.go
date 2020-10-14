@@ -35,6 +35,7 @@ func SetUpRouter() *gin.Engine {
 		postsRouter.POST("/post", postController.Create)
 		postsRouter.PUT("/:id", postController.Update)
 		postsRouter.DELETE("/:id", postController.Delete)
+		postsRouter.POST("/page/list",postController.PageList)
 	}
 	return r
 }
